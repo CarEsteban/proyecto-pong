@@ -1,4 +1,6 @@
 #include <iostream>
+#include "tablero.cpp"
+
 using namespace std;
 
 void mostrarMenu() {
@@ -21,18 +23,18 @@ int main() {
 
       switch (opcion) {
          case 1:
-               cout << "Modo Computadora vs Computadora seleccionado." << endl;
-               //Codigo 
-               break;
+                  cout << "Modo Computadora vs Computadora seleccionado." << endl;
+                  iniciarComputadoraVSComputadora() ;
+                  break;
          case 2:
-               cout << "Modo Computadora vs Jugador seleccionado." << endl;
-               //Codigo
-               break;
+                  cout << "Modo Computadora vs Jugador seleccionado." << endl;
+                  iniciarJugadorVSComputadora() ;
+                  break;
          case 3:
-               cout << "Saliendo del juego..." << endl;
-               return 0;
+                  cout << "Saliendo del juego..." << endl;
+                  return 0;
          default:
-               cout << "Opción no válida, por favor intenta de nuevo." << endl;
+                  cout << "Opción no válida, por favor intenta de nuevo." << endl;
       }
    }
 
