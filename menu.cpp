@@ -3,6 +3,15 @@
 
 using namespace std;
 
+void limpiarPantalla() {
+    #ifdef _WIN32
+        system("cls");  // Comando para limpiar en Windows
+    #else
+        system("clear");  // Comando para limpiar en Linux/macOS
+    #endif
+}
+
+
 void mostrarMenu() {
    cout << "****************************" << endl;
    cout << "*        PONG GAME         *" << endl;
@@ -18,6 +27,7 @@ int main() {
    int opcion;
 
    while (true) {
+      limpiarPantalla();  // Limpiar la pantalla al iniciar el programa
       mostrarMenu();
       cin >> opcion;
 
