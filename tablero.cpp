@@ -105,7 +105,7 @@ void iniciarTablero()
             tablero[y][raqueta1X] = 2; // Dibujar raqueta izquierda
         }
     }
-    // raqueta raqueta derecha del tablero
+    // raqueta raqueta derecha del
     for (int i = 0; i < 3; ++i)
     {
         int y = raqueta2Y + i;
