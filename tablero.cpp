@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const int ancho = 150;
+const int ancho = 80;
 const int alto = 20;
 int tablero[alto][ancho]; // Primero alto (filas), luego ancho (columnas)
 const int barPos = alto / 2;
