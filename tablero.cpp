@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cstdlib> // For rand() and srand()
+#include <ctime>   // For time()
 
 // Incluir las bibliotecas necesarias dependiendo del sistema operativo
 #ifdef _WIN32
@@ -26,6 +28,10 @@ int pelotaY = alto / 2;       // Posición vertical inicial de la pelota
 int velocidadPelotaX = 1;     // Velocidad horizontal de la pelota
 int velocidadPelotaY = 1;     // Velocidad vertical de la pelota
 
+// Variables de puntuación
+int scorePlayer1 = 0;         // Puntuación del jugador 1 (raqueta izquierda)
+int scorePlayer2 = 0;         // Puntuación del jugador 2 (raqueta derecha)
+
 void limpiarPantalla()
 {
 #ifdef _WIN32
@@ -35,14 +41,6 @@ void limpiarPantalla()
 #endif
 }
 
-void esperarEnter()
-{
-    cout << "Presiona Enter para continuar..." << endl;
-    cin.ignore(); // Ignora cualquier carácter residual en el buffer
-    cin.get();    // Espera a que el usuario presione Enter
-}
-
-// Definir la función dormir cross-platform
 void dormir(int milisegundos)
 {
 #ifdef _WIN32
@@ -52,13 +50,10 @@ void dormir(int milisegundos)
 #endif
 }
 
-void moverRaqueta()
-{
-    // Lógica para mover las raquetas (no implementada)
-}
-
 void imprimirTablero()
 {
+    cout << "Jugador 1: " << scorePlayer1 << " | Jugador 2: " << scorePlayer2 << endl;
+
     for (int i = 0; i < alto; i++)
     {
         for (int j = 0; j < ancho; j++)
@@ -133,6 +128,16 @@ void iniciarTablero()
     }
 }
 
+void resetPelota()
+{
+    pelotaX = ancho / 2;
+    pelotaY = alto / 2;
+
+    // Asignar una dirección aleatoria inicial a la pelota
+    velocidadPelotaX = (rand() % 2 == 0) ? 1 : -1;
+    velocidadPelotaY = (rand() % 2 == 0) ? 1 : -1;
+}
+
 void actualizarPelota()
 {
     // Actualizar la posición de la pelota
@@ -153,17 +158,22 @@ void actualizarPelota()
         velocidadPelotaY *= -1; // Invertir la dirección vertical
     }
 
-    // Si la pelota sale por los lados (opcional)
-    if (pelotaX <= 1 || pelotaX >= ancho - 2)
+    // Detección de colisión con los bordes laterales (marcar punto)
+    if (pelotaX <= 1)
     {
-        // Reiniciar la posición de la pelota al centro
-        pelotaX = ancho / 2;
-        pelotaY = alto / 2;
+        scorePlayer2++; // Jugador 2 marca un punto
+        resetPelota();
+    }
+    else if (pelotaX >= ancho - 2)
+    {
+        scorePlayer1++; // Jugador 1 marca un punto
+        resetPelota();
     }
 }
 
 void iniciarComputadoraVSComputadora()
 {
+    srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
     iniciarTablero();
     cout << "Iniciando Computadora vs Computadora..." << endl;
 
@@ -176,16 +186,8 @@ void iniciarComputadoraVSComputadora()
     }
 }
 
-void iniciarJugadorVSComputadora()
+int main()
 {
-    iniciarTablero();
-    cout << "Iniciando Computadora vs Jugador..." << endl;
-
-    while (true)
-    {
-        actualizarPelota();
-        imprimirTablero();
-        dormir(100); // Pausa de 100 milisegundos
-        limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
-    }
+    iniciarComputadoraVSComputadora();
+    return 0;
 }
