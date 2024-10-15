@@ -1,8 +1,17 @@
 #include <iostream>
 
+// Incluir las bibliotecas necesarias dependiendo del sistema operativo
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
+
+using namespace std;
+
 const int ancho = 150;
 const int alto = 20;
-int tablero[ancho][alto];
+int tablero[alto][ancho]; // Primero alto (filas), luego ancho (columnas)
 const int barPos = alto / 2;
 
 int raqueta1X = 2;            // Posición horizontal de la raqueta izquierda
@@ -11,7 +20,20 @@ int raqueta1Y = alto / 2 - 1; // Posición vertical inicial de la raqueta izquie
 int raqueta2X = ancho - 3;    // Posición horizontal de la raqueta derecha
 int raqueta2Y = alto / 2 - 1; // Posición vertical inicial de la raqueta derecha
 
-using namespace std;
+// Variables de la pelota
+int pelotaX = ancho / 2;      // Posición horizontal inicial de la pelota
+int pelotaY = alto / 2;       // Posición vertical inicial de la pelota
+int velocidadPelotaX = 1;     // Velocidad horizontal de la pelota
+int velocidadPelotaY = 1;     // Velocidad vertical de la pelota
+
+void limpiarPantalla()
+{
+#ifdef _WIN32
+    system("cls"); // Comando para limpiar en Windows
+#else
+    system("clear"); // Comando para limpiar en Linux/macOS
+#endif
+}
 
 void esperarEnter()
 {
@@ -20,24 +42,19 @@ void esperarEnter()
     cin.get();    // Espera a que el usuario presione Enter
 }
 
-// void imprimirRaqueta(int x)
-// {
-//     // 'x' es la posición horizontal de la raqueta (número de espacios antes del carácter)
-//     for (int i = 0; i < 3; ++i)
-//     {
-//         // Imprimir espacios para posicionar la raqueta horizontalmente
-//         for (int j = 0; j < x; ++j)
-//         {
-//             cout << " ";
-//         }
-//         // Imprimir el carácter de la raqueta
-//         cout << u8"\u2588" << endl;
-//     }
-// }
+// Definir la función dormir cross-platform
+void dormir(int milisegundos)
+{
+#ifdef _WIN32
+    Sleep(milisegundos);
+#else
+    usleep(milisegundos * 1000); // usleep recibe microsegundos
+#endif
+}
 
 void moverRaqueta()
 {
-    // logica de mover raqueta con #include <conio.h>
+    // Lógica para mover las raquetas (no implementada)
 }
 
 void imprimirTablero()
@@ -53,6 +70,10 @@ void imprimirTablero()
             else if (j == 0 || j == ancho - 1)
             {
                 cout << "|"; // Bordes izquierdo y derecho como líneas verticales
+            }
+            else if (i == pelotaY && j == pelotaX)
+            {
+                cout << "O"; // Representación de la pelota
             }
             else if (tablero[i][j] == 2)
             {
@@ -73,7 +94,7 @@ void imprimirTablero()
 
 void iniciarTablero()
 {
-    // Limpiar un tablero
+    // Limpiar el tablero
     for (int i = 0; i < alto; i++) // filas
     {
         for (int j = 0; j < ancho; j++) // columnas
@@ -92,27 +113,52 @@ void iniciarTablero()
     // Generar los bordes izquierdo y derecho
     for (int i = 1; i < alto - 1; i++)
     {
-        tablero[i][0] = -1;        // Borde izquierdo
-        tablero[i][alto - 1] = -1; // Borde derecho
+        tablero[i][0] = -1;           // Borde izquierdo
+        tablero[i][ancho - 1] = -1;   // Borde derecho
     }
-    // aqui va el código para iniciar las raquetas y la pelota
-    // raqueta izquierda del tablero
+
+    // Inicializar las raquetas
     for (int i = 0; i < 3; ++i)
     {
-        int y = raqueta1Y + i;
-        if (y >= 0 && y < alto) // Asegura que esté dentro de los límites
+        int y1 = raqueta1Y + i;
+        int y2 = raqueta2Y + i;
+        if (y1 >= 0 && y1 < alto)
         {
-            tablero[y][raqueta1X] = 2; // Dibujar raqueta izquierda
+            tablero[y1][raqueta1X] = 2; // Dibujar raqueta izquierda
+        }
+        if (y2 >= 0 && y2 < alto)
+        {
+            tablero[y2][raqueta2X] = 3; // Dibujar raqueta derecha
         }
     }
-    // raqueta raqueta derecha del
-    for (int i = 0; i < 3; ++i)
+}
+
+void actualizarPelota()
+{
+    // Actualizar la posición de la pelota
+    pelotaX += velocidadPelotaX;
+    pelotaY += velocidadPelotaY;
+
+    // Detección de colisión con la pared superior
+    if (pelotaY <= 1)
     {
-        int y = raqueta2Y + i;
-        if (y >= 0 && y < alto) // Asegura que esté dentro de los límites
-        {
-            tablero[y][raqueta2X] = 3; // Dibujar raqueta derecha
-        }
+        pelotaY = 1;
+        velocidadPelotaY *= -1; // Invertir la dirección vertical
+    }
+
+    // Detección de colisión con la pared inferior
+    if (pelotaY >= alto - 2)
+    {
+        pelotaY = alto - 2;
+        velocidadPelotaY *= -1; // Invertir la dirección vertical
+    }
+
+    // Si la pelota sale por los lados (opcional)
+    if (pelotaX <= 1 || pelotaX >= ancho - 2)
+    {
+        // Reiniciar la posición de la pelota al centro
+        pelotaX = ancho / 2;
+        pelotaY = alto / 2;
     }
 }
 
@@ -121,9 +167,13 @@ void iniciarComputadoraVSComputadora()
     iniciarTablero();
     cout << "Iniciando Computadora vs Computadora..." << endl;
 
-    imprimirTablero();
-
-    esperarEnter();
+    while (true)
+    {
+        actualizarPelota();
+        imprimirTablero();
+        dormir(100); // Pausa de 100 milisegundos
+        limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
+    }
 }
 
 void iniciarJugadorVSComputadora()
@@ -131,7 +181,11 @@ void iniciarJugadorVSComputadora()
     iniciarTablero();
     cout << "Iniciando Computadora vs Jugador..." << endl;
 
-    imprimirTablero();
-
-    esperarEnter();
+    while (true)
+    {
+        actualizarPelota();
+        imprimirTablero();
+        dormir(100); // Pausa de 100 milisegundos
+        limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
+    }
 }
