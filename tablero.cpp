@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
+#include <pthread.h> // Libreria de pthread
+#include <unistd.h> // Libreria de sleep
+#include <termios.h> // Libreria de termios
 
 // Incluir las bibliotecas necesarias dependiendo del sistema operativo
 #ifdef _WIN32
@@ -31,6 +34,8 @@ int velocidadPelotaY = 1;     // Velocidad vertical de la pelota
 // Variables de puntuación
 int scorePlayer1 = 0;         // Puntuación del jugador 1 (raqueta izquierda)
 int scorePlayer2 = 0;         // Puntuación del jugador 2 (raqueta derecha)
+
+pthread_mutex_t mtx; //Mutex
 
 void limpiarPantalla()
 {
@@ -132,7 +137,6 @@ void resetPelota()
 {
     pelotaX = ancho / 2;
     pelotaY = alto / 2;
-
     // Asignar una dirección aleatoria inicial a la pelota
     velocidadPelotaX = (rand() % 2 == 0) ? 1 : -1;
     velocidadPelotaY = (rand() % 2 == 0) ? 1 : -1;
@@ -140,6 +144,7 @@ void resetPelota()
 
 void actualizarPelota()
 {
+    pthread_mutex_lock(&mtx); //Bloquear el mutex
     // Actualizar la posición de la pelota
     pelotaX += velocidadPelotaX;
     pelotaY += velocidadPelotaY;
@@ -169,13 +174,61 @@ void actualizarPelota()
         scorePlayer1++; // Jugador 1 marca un punto
         resetPelota();
     }
+    pthread_mutex_unlock(&mtx); //Desbloquear el mutex
+}
+void*hiloPelota(void*arg){
+    while (true)
+    {
+        actualizarPelota();
+        imprimirTablero();
+        dormir(100); // Pausa de 100 milisegundos
+        limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
+    }
 }
 
+void moverRaquetaIA() {
+    pthread_mutex_lock(&mtx);
+    if (raqueta2Y < pelotaY) {
+        raqueta2Y++;
+    } else if (raqueta2Y > pelotaY) {
+        raqueta2Y--;
+    }
+    pthread_mutex_unlock(&mtx);
+}
+
+void* hiloJugador2(void*) {
+    while (true) {
+        moverRaquetaIA();
+        dormir(100);
+    }
+}
+/*NECESARIO AGREGAR LA FUNCION PARA LEER LAS TECLAS USANDO LIBRERIA TERMIOS Y LA FUNCION DEL MOVIMIENTO
+DEL JUGADOR CON SU MUTEX LOCK Y UNLOCK */
+void* hiloJugador1(void*) {
+    while (true) {
+        char tecla = leerTecla();
+        moverRaqueta1(tecla);
+    }
+}
+/*Podria ser que haya que cambiar esa parte no estoy seguro Ian*/
 void iniciarComputadoraVSComputadora()
 {
     srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
     iniciarTablero();
     cout << "Iniciando Computadora vs Computadora..." << endl;
+    pthread_mutex_init(&mtx, NULL); // Inicializar el mutex
+
+    pthread_t th1, th2, thPelota;
+    pthread_create(&th1, NULL, hiloJugador1, NULL);
+    pthread_create(&th2, NULL, hiloJugador2, NULL);
+    pthread_create(&thPelota, NULL, hiloPelota, NULL);
+
+    pthread_join(th1, NULL);
+    pthread_join(th2, NULL);
+    pthread_join(thPelota, NULL);
+
+    pthread_mutex_destroy(&mtx); // Destruir el mutex
+
 
     while (true)
     {
