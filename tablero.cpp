@@ -163,6 +163,16 @@ void actualizarPelota()
         velocidadPelotaY *= -1; // Invertir la dirección vertical
     }
 
+    // Detección de colisión con las raquetas
+    if (pelotaX == raqueta1X + 1 && pelotaY >= raqueta1Y && pelotaY <= raqueta1Y + 2)
+    {
+        velocidadPelotaX *= -1; // Invertir la dirección horizontal al colisionar con la raqueta izquierda
+    }
+    if (pelotaX == raqueta2X - 1 && pelotaY >= raqueta2Y && pelotaY <= raqueta2Y + 2)
+    {
+        velocidadPelotaX *= -1; // Invertir la dirección horizontal al colisionar con la raqueta derecha
+    }
+
     // Detección de colisión con los bordes laterales (marcar punto)
     if (pelotaX <= 1)
     {
@@ -174,16 +184,25 @@ void actualizarPelota()
         scorePlayer1++; // Jugador 1 marca un punto
         resetPelota();
     }
+
     pthread_mutex_unlock(&mtx); //Desbloquear el mutex
 }
-void*hiloPelota(void*arg){
+
+void* hiloPelota(void* arg)
+{
     while (true)
     {
         actualizarPelota();
         imprimirTablero();
         dormir(100); // Pausa de 100 milisegundos
         limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
+
+        // Finalizar el juego si alguien alcanza 10 puntos
+        if (scorePlayer1 == 10 || scorePlayer2 == 10) {
+            break;
+        }
     }
+    return nullptr;
 }
 
 void moverRaquetaIA() {
@@ -200,17 +219,46 @@ void* hiloJugador2(void*) {
     while (true) {
         moverRaquetaIA();
         dormir(100);
+        if (scorePlayer1 == 10 || scorePlayer2 == 10) {
+            break;
+        }
     }
+    return nullptr;
 }
-/*NECESARIO AGREGAR LA FUNCION PARA LEER LAS TECLAS USANDO LIBRERIA TERMIOS Y LA FUNCION DEL MOVIMIENTO
-DEL JUGADOR CON SU MUTEX LOCK Y UNLOCK */
+
+char leerTecla() {
+    struct termios oldt, newt;
+    char ch;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    return ch;
+}
+
+void moverRaqueta1(char tecla) {
+    pthread_mutex_lock(&mtx);
+    if (tecla == 'w' && raqueta1Y > 1) {
+        raqueta1Y--;
+    } else if (tecla == 's' && raqueta1Y < alto - 4) {
+        raqueta1Y++;
+    }
+    pthread_mutex_unlock(&mtx);
+}
+
 void* hiloJugador1(void*) {
     while (true) {
         char tecla = leerTecla();
         moverRaqueta1(tecla);
+        if (scorePlayer1 == 10 || scorePlayer2 == 10) {
+            break;
+        }
     }
+    return nullptr;
 }
-/*Podria ser que haya que cambiar esa parte no estoy seguro Ian*/
+
 void iniciarComputadoraVSComputadora()
 {
     srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
@@ -229,18 +277,13 @@ void iniciarComputadoraVSComputadora()
 
     pthread_mutex_destroy(&mtx); // Destruir el mutex
 
-
-    while (true)
-    {
-        actualizarPelota();
-        imprimirTablero();
-        dormir(100); // Pausa de 100 milisegundos
-        limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
-    }
+    cout << "Juego terminado." << endl;
 }
 
+/*
 int main()
 {
     iniciarComputadoraVSComputadora();
     return 0;
 }
+*/

@@ -1,10 +1,7 @@
 #include <iostream>
-#include <chrono>
-#include <thread>
-#include "tablero.cpp"
-#include <locale>
-using namespace std;
+#include "tablero.cpp" // Cambia "tablero.cpp" por "tablero.h"
 
+using namespace std;
 
 void mostrarMenu()
 {
@@ -23,24 +20,23 @@ int main()
     int opcion;
     while (true)
     {
-        limpiarPantalla(); // Limpiar la pantalla al iniciar el programa
+        limpiarPantalla(); // Ahora limpiarPantalla() está en el archivo tablero.cpp
         mostrarMenu();
         cin >> opcion;
 
         switch (opcion)
         {
         case 1:
-            iniciarComputadoraVSComputadora();
+            iniciarComputadoraVSComputadora(); // Llamada correcta si está definida en tablero.cpp
             break;
         case 2:
-            iniciarJugadorVSComputadora();
+            // iniciarJugadorVSComputadora(); // Define la función si la necesitas
             break;
         case 3:
             cout << "Saliendo del juego..." << endl;
             return 0;
         default:
             cout << "Opción no válida, por favor intenta de nuevo." << endl;
-            esperarEnter();
         }
     }
 
