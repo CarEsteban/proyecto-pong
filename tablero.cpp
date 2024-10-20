@@ -207,15 +207,29 @@ void* hiloPelota(void* arg)
 
 void moverRaquetaIA() {
     pthread_mutex_lock(&mtx);
-    if (raqueta2Y < pelotaY) {
+
+    for (int i = 0; i < 3; ++i) {
+      if (raqueta2Y+1>=0 && raqueta2Y+1<alto) {
+        tablero[raqueta2Y+i][raqueta2X] = 0;
+      }
+    }
+
+    if (raqueta2Y < pelotaY && raqueta2Y < alto - 4) {
         raqueta2Y++;
-    } else if (raqueta2Y > pelotaY) {
+    } else if (raqueta2Y > pelotaY && raqueta2Y > 1) {
         raqueta2Y--;
     }
+
+    for (int i = 0; i < 3; i++) {
+        if (raqueta2Y + i >= 0 && raqueta2Y+i < alto) {
+          tablero[raqueta2Y + i][raqueta2X] = 3;
+        }
+    }
+
     pthread_mutex_unlock(&mtx);
 }
 
-void* hiloJugador2(void*) {
+void* hiloJugadorComputadora(void*) {
     while (true) {
         moverRaquetaIA();
         dormir(100);
@@ -225,6 +239,18 @@ void* hiloJugador2(void*) {
     }
     return nullptr;
 }
+
+
+#ifdef _WIN32
+#include <conio.h>  // Windows-specific header for getch()
+
+char leerTecla() {
+    return getch();  // Función para capturar teclas en Windows
+}
+
+#else
+#include <termios.h>
+#include <unistd.h>  // Para usar STDIN_FILENO
 
 char leerTecla() {
     struct termios oldt, newt;
@@ -237,21 +263,46 @@ char leerTecla() {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return ch;
 }
+#endif
 
-void moverRaqueta1(char tecla) {
-    pthread_mutex_lock(&mtx);
+
+
+
+void moverRaquetaJugador(char tecla) {
+    pthread_mutex_lock(&mtx); 
+
+   
+    //Limpiar la posicion anterior
+    for (int i = 0; i < 3; i++) {
+      if (raqueta1Y+i >=0 && raqueta1Y + i < alto) {
+        tablero[raqueta1Y+i][raqueta1X] = 0;
+      }
+    }
+
+ 
     if (tecla == 'w' && raqueta1Y > 1) {
         raqueta1Y--;
     } else if (tecla == 's' && raqueta1Y < alto - 4) {
         raqueta1Y++;
     }
+
+
+    //dibujar la nueva posicion
+    for (int i = 0; i < 3; i++) {
+      if (raqueta1Y+i >=0 && raqueta1Y + i < alto) {
+        tablero[raqueta1Y+i][raqueta1X] = 2;
+      }
+    }
+
     pthread_mutex_unlock(&mtx);
+
+
 }
 
-void* hiloJugador1(void*) {
+void* hiloJugador(void*) {
     while (true) {
         char tecla = leerTecla();
-        moverRaqueta1(tecla);
+        moverRaquetaJugador(tecla);
         if (scorePlayer1 == 10 || scorePlayer2 == 10) {
             break;
         }
@@ -267,8 +318,8 @@ void iniciarComputadoraVSComputadora()
     pthread_mutex_init(&mtx, NULL); // Inicializar el mutex
 
     pthread_t th1, th2, thPelota;
-    pthread_create(&th1, NULL, hiloJugador1, NULL);
-    pthread_create(&th2, NULL, hiloJugador2, NULL);
+    pthread_create(&th1, NULL, hiloJugadorComputadora, NULL);
+    pthread_create(&th2, NULL, hiloJugadorComputadora, NULL);
     pthread_create(&thPelota, NULL, hiloPelota, NULL);
 
     pthread_join(th1, NULL);
@@ -280,10 +331,26 @@ void iniciarComputadoraVSComputadora()
     cout << "Juego terminado." << endl;
 }
 
-/*
-int main()
+
+void iniciarJugadorVSComputadora()
 {
-    iniciarComputadoraVSComputadora();
-    return 0;
+    srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
+    iniciarTablero();
+    cout << "Iniciando Jugador vs Computadora..." << endl;
+    pthread_mutex_init(&mtx, NULL); // Inicializar el mutex
+
+    pthread_t th1, thPelota;
+    pthread_create(&th1, NULL, hiloJugador, NULL); // Jugador 1 controlado por el usuario
+    pthread_create(&thPelota, NULL, hiloPelota, NULL); // Hilo de la pelota
+
+    pthread_t th2;
+    pthread_create(&th2, NULL, hiloJugadorComputadora, NULL); // Jugador 2 controlado por la IA
+
+    pthread_join(th1, NULL);
+    pthread_join(th2, NULL);
+    pthread_join(thPelota, NULL);
+
+    pthread_mutex_destroy(&mtx); // Destruir el mutex
+
+    cout << "Juego terminado." << endl;
 }
-*/

@@ -30,7 +30,7 @@ int main()
             iniciarComputadoraVSComputadora(); // Llamada correcta si está definida en tablero.cpp
             break;
         case 2:
-            // iniciarJugadorVSComputadora(); // Define la función si la necesitas
+            iniciarJugadorVSComputadora(); // Define la función si la necesitas
             break;
         case 3:
             cout << "Saliendo del juego..." << endl;
