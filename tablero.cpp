@@ -309,7 +309,6 @@ char leerTecla()
 void moverRaquetaJugador(char tecla)
 {
     pthread_mutex_lock(&mtx);
-
     // Limpiar la posicion anterior
     for (int i = 0; i < 3; i++)
     {
@@ -385,20 +384,21 @@ void iniciarJugadorVSComputadora()
     srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
     iniciarTablero();
     cout << "Iniciando Jugador vs Computadora..." << endl;
-    pthread_mutex_init(&mtx, NULL); // Inicializar el mutex
+    pthread_mutex_init(&mtxRaqueta2, NULL); // Inicializar el mutex
 
     pthread_t th1, thPelota;
     pthread_create(&th1, NULL, hiloJugador, NULL);     // Jugador 1 controlado por el usuario
     pthread_create(&thPelota, NULL, hiloPelota, NULL); // Hilo de la pelota
 
     pthread_t th2;
-    pthread_create(&th2, NULL, hiloJugadorComputadora, NULL); // Jugador 2 controlado por la IA
+    int raqueta2ID = 2;
+    pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID); // Jugador 2 controlado por la IA
 
     pthread_join(th1, NULL);
     pthread_join(th2, NULL);
     pthread_join(thPelota, NULL);
 
-    pthread_mutex_destroy(&mtx); // Destruir el mutex
+    pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex
 
     cout << "Juego terminado." << endl;
 }
