@@ -1,11 +1,11 @@
 # PONG GAME
 
-Correr en macos (clang)
+Correr en MacOS (clang)
 ```
 clang++ menu.cpp -o pong_game
 ./pong_game
 ```
-Correr en windows / Linux
+Correr en Windows / Linux
 
 ```
 g++ menu.cpp -o pong_game
