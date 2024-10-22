@@ -29,6 +29,8 @@ int scorePlayer2 = 0;         // Puntuación del jugador 2 (raqueta derecha)
 
 bool salir = false;           // Variable para controlar si se debe salir del juego
 
+const int maxScore = 5;       // Conteo máximo para ganar
+
 // Mutexes
 pthread_mutex_t mtx;                      // Mutex para la pelota
 pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas.
@@ -186,13 +188,20 @@ void *hiloPelota(void *arg) {
         imprimirTablero();
         dormir(100);       // Pausa de 100 milisegundos
         limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
-        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir) {
+        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
+            salir = true;
             break;
         }
     }
+    // Mostrar el ganador
+    imprimirTablero(); // Mostrar el tablero final
+    if (scorePlayer1 >= maxScore) {
+        cout << "¡Jugador 1 ha ganado!" << endl;
+    } else if (scorePlayer2 >= maxScore) {
+        cout << "¡Jugador 2 ha ganado!" << endl;
+    }
     return nullptr;
 }
-
 
 // Funciones para mover las raquetas
 // ---------------------------
@@ -222,7 +231,8 @@ void *hiloJugador(void *) {
     while (!salir) {
         char tecla = leerTecla();
         moverRaquetaJugador(tecla);
-        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir) {
+        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
+            salir = true;
             break;
         }
     }
@@ -296,7 +306,8 @@ void *hiloJugadorComputadora(void *arg) {
     while (!salir) {
         moverRaquetaIA(raquetaID);
         dormir(100);
-        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir) {
+        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
+            salir = true;
             break;
         }
     }
@@ -340,9 +351,10 @@ void iniciarJugadorVSComputadora() {
 
     pthread_mutex_init(&mtxRaqueta2, NULL);
 
-    pthread_t th1, thPelota;
+    pthread_t th1, thPelota, thTeclaX;
     pthread_create(&th1, NULL, hiloJugador, NULL);
     pthread_create(&thPelota, NULL, hiloPelota, NULL);
+    pthread_create(&thTeclaX, NULL, detectarTeclaX, NULL);
 
     pthread_t th2;
     int raqueta2ID = 2;
@@ -351,6 +363,7 @@ void iniciarJugadorVSComputadora() {
     pthread_join(th1, NULL);
     pthread_join(th2, NULL);
     pthread_join(thPelota, NULL);
+    pthread_join(thTeclaX, NULL);
 
     pthread_mutex_destroy(&mtxRaqueta2);
 
