@@ -2,14 +2,14 @@
 
 Correr en MacOS (clang)
 ```
-clang++ menu.cpp -o pong_game
-./pong_game
+clang++ menu.cpp -o menu
+./menu
 ```
 Correr en Windows / Linux
 
 ```
-g++ menu.cpp -o pong_game
-./pong_game
+g++ menu.cpp -o menu
+./menu
 ```
 
 
