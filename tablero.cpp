@@ -285,42 +285,12 @@ void *hiloPelota(void *arg)
 
 // Funciones para mover las raquetas
 // ---------------------------
-void moverRaquetaJugador(char tecla)
-{
-    pthread_mutex_lock(&mtx);
-    for (int i = 0; i < 3; i++)
-    {
-        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
-        {
-            tablero[raqueta1Y + i][raqueta1X] = 0;
-        }
-    }
-
-    if (tecla == 'w' && raqueta1Y > 1)
-    {
-        raqueta1Y--;
-    }
-    else if (tecla == 's' && raqueta1Y < alto - 4)
-    {
-        raqueta1Y++;
-    }
-
-    for (int i = 0; i < 3; i++)
-    {
-        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
-        {
-            tablero[raqueta1Y + i][raqueta1X] = 2;
-        }
-    }
-    pthread_mutex_unlock(&mtx);
-}
 
 void *hiloJugador(void *)
 {
     while (!salir)
     {
         char tecla = leerTecla();
-        moverRaquetaJugador(tecla);
         if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir)
         {
             salir = true;
