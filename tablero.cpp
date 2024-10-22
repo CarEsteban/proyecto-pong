@@ -44,6 +44,37 @@ void dormir(int milisegundos) {
     usleep(milisegundos * 1000); // usleep recibe microsegundos
 }
 
+char leerTecla()
+{
+    struct termios oldt, newt;
+    char ch;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+
+    // Si la tecla 'x' es presionada, se debe salir al menú
+    if (ch == 'x')
+    {
+        salir = true; // Cambiar el estado de la variable global
+    }
+
+    return ch;
+}
+
+void *detectarTeclaX(void *) {
+    while (!salir) {
+        char tecla = leerTecla();
+        if (tecla == 'x') {
+            salir = true;
+        }
+    }
+    return nullptr;
+}
+
 // Funciones de manejo del tablero y pelota
 // ---------------------------
 void iniciarTablero() {
@@ -162,15 +193,6 @@ void *hiloPelota(void *arg) {
     return nullptr;
 }
 
-void *detectarTeclaX(void *) {
-    while (!salir) {
-        char tecla = leerTecla();
-        if (tecla == 'x') {
-            salir = true;
-        }
-    }
-    return nullptr;
-}
 
 // Funciones para mover las raquetas
 // ---------------------------
