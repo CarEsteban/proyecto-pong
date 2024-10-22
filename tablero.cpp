@@ -449,16 +449,16 @@ void iniciarJugadorVSComputadora()
     scorePlayer1 = 0;
     scorePlayer2 = 0;
 
-    pthread_mutex_init(&mtxRaqueta2, NULL);
+    int raqueta2ID = 2;
 
-    pthread_t th1, thPelota, thTeclaX;
+    pthread_mutex_init(&mtxRaqueta2, NULL);
+    
+    pthread_t th1, th2, thPelota, thTeclaX;
     pthread_create(&th1, NULL, hiloJugador, NULL);
+    pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID);
     pthread_create(&thPelota, NULL, hiloPelota, NULL);
     pthread_create(&thTeclaX, NULL, detectarTeclaX, NULL);
 
-    pthread_t th2;
-    int raqueta2ID = 2;
-    pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID);
 
     pthread_join(th1, NULL);
     pthread_join(th2, NULL);
