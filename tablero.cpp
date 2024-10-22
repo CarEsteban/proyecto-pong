@@ -5,7 +5,6 @@
 #include <unistd.h>  // Libreria de sleep
 #include <termios.h> // Libreria de termios
 
-// Incluir las bibliotecas necesarias dependiendo del sistema operativo
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -35,8 +34,9 @@ int velocidadPelotaY = 1; // Velocidad vertical de la pelota
 int scorePlayer1 = 0; // Puntuación del jugador 1 (raqueta izquierda)
 int scorePlayer2 = 0; // Puntuación del jugador 2 (raqueta derecha)
 
-pthread_mutex_t mtx;                      // Mutex
+pthread_mutex_t mtx;                      // Mutex para la pelota
 pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas.
+pthread_mutex_t mtxScore;                 // Mutex para el marcador
 
 void limpiarPantalla()
 {
@@ -145,7 +145,7 @@ void resetPelota()
 
 void actualizarPelota()
 {
-    pthread_mutex_lock(&mtx); // Bloquear el mutex
+    pthread_mutex_lock(&mtx); // Bloquear el mutex para la pelota
     // Actualizar la posición de la pelota
     pelotaX += velocidadPelotaX;
     pelotaY += velocidadPelotaY;
@@ -177,16 +177,20 @@ void actualizarPelota()
     // Detección de colisión con los bordes laterales (marcar punto)
     if (pelotaX <= 1)
     {
-        scorePlayer2++; // Jugador 2 marca un punto
+        pthread_mutex_lock(&mtxScore); // Bloquear el mutex del marcador
+        scorePlayer2++;                // Jugador 2 marca un punto
+        pthread_mutex_unlock(&mtxScore); // Desbloquear el mutex del marcador
         resetPelota();
     }
     else if (pelotaX >= ancho - 2)
     {
-        scorePlayer1++; // Jugador 1 marca un punto
+        pthread_mutex_lock(&mtxScore); // Bloquear el mutex del marcador
+        scorePlayer1++;                // Jugador 1 marca un punto
+        pthread_mutex_unlock(&mtxScore); // Desbloquear el mutex del marcador
         resetPelota();
     }
 
-    pthread_mutex_unlock(&mtx); // Desbloquear el mutex
+    pthread_mutex_unlock(&mtx); // Desbloquear el mutex de la pelota
 }
 
 void *hiloPelota(void *arg)
@@ -231,7 +235,7 @@ void moverRaquetaIA(int raquetaID)
         {
             if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
             {
-                tablero[raqueta1Y + i][raqueta1X] = 3;
+                tablero[raqueta1Y + i][raqueta1X] = 2; // Raqueta izquierda
             }
         }
         pthread_mutex_unlock(&mtxRaqueta1);
@@ -258,7 +262,7 @@ void moverRaquetaIA(int raquetaID)
         {
             if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
             {
-                tablero[raqueta2Y + i][raqueta2X] = 3;
+                tablero[raqueta2Y + i][raqueta2X] = 3; // Raqueta derecha
             }
         }
         pthread_mutex_unlock(&mtxRaqueta2);
@@ -374,7 +378,7 @@ void iniciarComputadoraVSComputadora()
     pthread_join(thPelota, NULL);
 
     pthread_mutex_destroy(&mtxRaqueta1); // Destruir el mutex de raqueta 1
-    pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex de raqueta 1
+    pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex de raqueta 2
 
     cout << "Juego terminado." << endl;
 }
@@ -402,3 +406,4 @@ void iniciarJugadorVSComputadora()
 
     cout << "Juego terminado." << endl;
 }
+

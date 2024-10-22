@@ -1,5 +1,5 @@
 #include <iostream>
-#include "tablero.cpp" // Cambia "tablero.cpp" por "tablero.h"
+#include "tablero.cpp" // Cambia "tablero.cpp" por "tablero.h" si usas un archivo de cabecera
 
 using namespace std;
 
@@ -17,6 +17,12 @@ void mostrarMenu()
 
 int main()
 {
+    // Inicializa los mutexes que se necesitan
+    pthread_mutex_init(&mtxScore, NULL); // Inicializar el mutex del marcador
+    pthread_mutex_init(&mtxRaqueta1, NULL); // Inicializar el mutex de la primera raqueta
+    pthread_mutex_init(&mtxRaqueta2, NULL); // Inicializar el mutex de la segunda raqueta
+    pthread_mutex_init(&mtx, NULL); // Inicializar el mutex de la pelota
+
     int opcion;
     while (true)
     {
@@ -34,6 +40,11 @@ int main()
             break;
         case 3:
             cout << "Saliendo del juego..." << endl;
+            // Destruye los mutexes antes de salir
+            pthread_mutex_destroy(&mtxScore); // Destruir el mutex del marcador
+            pthread_mutex_destroy(&mtxRaqueta1); // Destruir el mutex de la primera raqueta
+            pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex de la segunda raqueta
+            pthread_mutex_destroy(&mtx); // Destruir el mutex de la pelota
             return 0;
         default:
             cout << "Opción no válida, por favor intenta de nuevo." << endl;
