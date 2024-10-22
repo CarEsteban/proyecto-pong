@@ -1,10 +1,9 @@
 #include <iostream>
-#include <cstdlib>   // For rand() and srand()
-#include <ctime>     // For time()
-#include <pthread.h> // Libreria de pthread
-#include <unistd.h>  // Libreria de sleep
-#include <termios.h> // Libreria de termios
-#include <unistd.h>
+#include <cstdlib>   // Para rand() y srand()
+#include <ctime>     // Para time()
+#include <pthread.h> // Librería de pthread
+#include <unistd.h>  // Librería de sleep
+#include <termios.h> // Librería de termios
 
 using namespace std;
 
@@ -31,9 +30,10 @@ bool salir = false;           // Variable para controlar si se debe salir del ju
 
 const int maxScore = 5;       // Conteo máximo para ganar
 
-// Mutexes
+int velocidad = 100;          // **Variable global para la velocidad**
+
 pthread_mutex_t mtx;                      // Mutex para la pelota
-pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas.
+pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas
 pthread_mutex_t mtxScore;                 // Mutex para el marcador
 
 // Utilidades básicas
@@ -56,7 +56,6 @@ char leerTecla()
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
     ch = getchar();
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-
 
     // Si la tecla 'x' es presionada, se debe salir al menú
     if (ch == 'x')
@@ -186,7 +185,7 @@ void *hiloPelota(void *arg) {
     while (!salir) {
         actualizarPelota();
         imprimirTablero();
-        dormir(100);       // Pausa de 100 milisegundos
+        dormir(velocidad);       // **Usar la velocidad configurada**
         limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
         if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
             salir = true;
@@ -305,7 +304,7 @@ void *hiloJugadorComputadora(void *arg) {
     int raquetaID = *(int *)arg;
     while (!salir) {
         moverRaquetaIA(raquetaID);
-        dormir(100);
+        dormir(velocidad); // **Usar la velocidad configurada**
         if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
             salir = true;
             break;
@@ -320,6 +319,8 @@ void iniciarComputadoraVSComputadora() {
     srand(static_cast<unsigned int>(time(0)));
     iniciarTablero();
     salir = false;
+    scorePlayer1 = 0;
+    scorePlayer2 = 0;
 
     pthread_mutex_init(&mtxRaqueta1, NULL);
     pthread_mutex_init(&mtxRaqueta2, NULL);
@@ -348,6 +349,8 @@ void iniciarJugadorVSComputadora() {
     srand(static_cast<unsigned int>(time(0)));
     iniciarTablero();
     salir = false;
+    scorePlayer1 = 0;
+    scorePlayer2 = 0;
 
     pthread_mutex_init(&mtxRaqueta2, NULL);
 
