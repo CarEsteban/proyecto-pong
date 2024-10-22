@@ -69,15 +69,44 @@ char leerTecla()
     ch = getchar();
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
+
     // Si la tecla 'x' es presionada, se debe salir al menú
     if (ch == 'x')
     {
         salir = true; // Cambiar el estado de la variable global
     }
+    else if (ch == 'w' || ch == 's') // Mover la raqueta del jugador
+    {
+        pthread_mutex_lock(&mtx);
+        for (int i = 0; i < 3; i++)
+        {
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
+            {
+                tablero[raqueta1Y + i][raqueta1X] = 0;
+            }
+        }
+
+        if (ch == 'w' && raqueta1Y > 1)
+        {
+            raqueta1Y--;
+        }
+        else if (ch == 's' && raqueta1Y < alto - 4)
+        {
+            raqueta1Y++;
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
+            {
+                tablero[raqueta1Y + i][raqueta1X] = 2;
+            }
+        }
+        pthread_mutex_unlock(&mtx);
+    }
 
     return ch;
 }
-
 void *detectarTeclaX(void *)
 {
     while (!salir)
