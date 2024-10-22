@@ -8,10 +8,10 @@
 
 using namespace std;
 
+// Constantes y variables globales
 const int ancho = 80;
 const int alto = 20;
 int tablero[alto][ancho]; // Primero alto (filas), luego ancho (columnas)
-const int barPos = alto / 2;
 
 int raqueta1X = 2;            // Posición horizontal de la raqueta izquierda
 int raqueta1Y = alto / 2 - 1; // Posición vertical inicial de la raqueta izquierda
@@ -19,435 +19,318 @@ int raqueta1Y = alto / 2 - 1; // Posición vertical inicial de la raqueta izquie
 int raqueta2X = ancho - 3;    // Posición horizontal de la raqueta derecha
 int raqueta2Y = alto / 2 - 1; // Posición vertical inicial de la raqueta derecha
 
-// Variables de la pelota
-int pelotaX = ancho / 2;  // Posición horizontal inicial de la pelota
-int pelotaY = alto / 2;   // Posición vertical inicial de la pelota
-int velocidadPelotaX = 1; // Velocidad horizontal de la pelota
-int velocidadPelotaY = 1; // Velocidad vertical de la pelota
+int pelotaX = ancho / 2;      // Posición horizontal inicial de la pelota
+int pelotaY = alto / 2;       // Posición vertical inicial de la pelota
+int velocidadPelotaX = 1;     // Velocidad horizontal de la pelota
+int velocidadPelotaY = 1;     // Velocidad vertical de la pelota
 
-// Variables de puntuación
-int scorePlayer1 = 0; // Puntuación del jugador 1 (raqueta izquierda)
-int scorePlayer2 = 0; // Puntuación del jugador 2 (raqueta derecha)
+int scorePlayer1 = 0;         // Puntuación del jugador 1 (raqueta izquierda)
+int scorePlayer2 = 0;         // Puntuación del jugador 2 (raqueta derecha)
 
-bool salir = false; // Variable para controlar si se debe salir del juego
+bool salir = false;           // Variable para controlar si se debe salir del juego
 
-
+// Mutexes
 pthread_mutex_t mtx;                      // Mutex para la pelota
 pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas.
 pthread_mutex_t mtxScore;                 // Mutex para el marcador
 
-void limpiarPantalla()
-{
+// Utilidades básicas
+// ---------------------------
+void limpiarPantalla() {
     system("clear"); // Comando para limpiar en Linux/macOS
 }
 
-void dormir(int milisegundos)
-{
+void dormir(int milisegundos) {
     usleep(milisegundos * 1000); // usleep recibe microsegundos
 }
 
-void imprimirTablero()
-{
-    cout << "Jugador 1: " << scorePlayer1 << " | Jugador 2: " << scorePlayer2 << endl;
-
-    for (int i = 0; i < alto; i++)
-    {
-        for (int j = 0; j < ancho; j++)
-        {
-            if (i == 0 || i == alto - 1)
-            {
-                cout << "_"; // Bordes superior e inferior como línea continua
-            }
-            else if (j == 0 || j == ancho - 1)
-            {
-                cout << "|"; // Bordes izquierdo y derecho como líneas verticales
-            }
-            else if (i == pelotaY && j == pelotaX)
-            {
-                cout << "O"; // Representación de la pelota
-            }
-            else if (tablero[i][j] == 2)
-            {
-                cout << u8"\u2588"; // Carácter de la raqueta izquierda
-            }
-            else if (tablero[i][j] == 3)
-            {
-                cout << u8"\u2588"; // Carácter de la raqueta derecha
-            }
-            else
-            {
-                cout << " "; // Espacio vacío en el interior
-            }
-        }
-        cout << endl; // Nueva línea al final de cada fila
-    }
-}
-
-void iniciarTablero()
-{
+// Funciones de manejo del tablero y pelota
+// ---------------------------
+void iniciarTablero() {
     // Limpiar el tablero
-    for (int i = 0; i < alto; i++) // filas
-    {
-        for (int j = 0; j < ancho; j++) // columnas
-        {
-            tablero[i][j] = 0; // Limpiar el tablero
+    for (int i = 0; i < alto; i++) {
+        for (int j = 0; j < ancho; j++) {
+            tablero[i][j] = 0;
         }
     }
 
-    // Generar el borde superior e inferior
-    for (int j = 0; j < ancho; j++)
-    {
+    // Generar los bordes superior, inferior, izquierdo y derecho
+    for (int j = 0; j < ancho; j++) {
         tablero[0][j] = 1;        // Borde superior
         tablero[alto - 1][j] = 1; // Borde inferior
     }
 
-    // Generar los bordes izquierdo y derecho
-    for (int i = 1; i < alto - 1; i++)
-    {
+    for (int i = 1; i < alto - 1; i++) {
         tablero[i][0] = -1;         // Borde izquierdo
         tablero[i][ancho - 1] = -1; // Borde derecho
     }
 
     // Inicializar las raquetas
-    for (int i = 0; i < 3; ++i)
-    {
+    for (int i = 0; i < 3; ++i) {
         int y1 = raqueta1Y + i;
         int y2 = raqueta2Y + i;
-        if (y1 >= 0 && y1 < alto)
-        {
-            tablero[y1][raqueta1X] = 2; // Dibujar raqueta izquierda
+        if (y1 >= 0 && y1 < alto) {
+            tablero[y1][raqueta1X] = 2; // Raqueta izquierda
         }
-        if (y2 >= 0 && y2 < alto)
-        {
-            tablero[y2][raqueta2X] = 3; // Dibujar raqueta derecha
+        if (y2 >= 0 && y2 < alto) {
+            tablero[y2][raqueta2X] = 3; // Raqueta derecha
         }
     }
 }
 
-void resetPelota()
-{
+void resetPelota() {
     pelotaX = ancho / 2;
     pelotaY = alto / 2;
-    // Asignar una dirección aleatoria inicial a la pelota
     velocidadPelotaX = (rand() % 2 == 0) ? 1 : -1;
     velocidadPelotaY = (rand() % 2 == 0) ? 1 : -1;
 }
 
-void actualizarPelota()
-{
+void actualizarPelota() {
     pthread_mutex_lock(&mtx); // Bloquear el mutex para la pelota
-    // Actualizar la posición de la pelota
     pelotaX += velocidadPelotaX;
     pelotaY += velocidadPelotaY;
 
-    // Detección de colisión con la pared superior
-    if (pelotaY <= 1)
-    {
+    // Detección de colisión con la pared superior e inferior
+    if (pelotaY <= 1) {
         pelotaY = 1;
-        velocidadPelotaY *= -1; // Invertir la dirección vertical
+        velocidadPelotaY *= -1;
     }
-
-    // Detección de colisión con la pared inferior
-    if (pelotaY >= alto - 2)
-    {
+    if (pelotaY >= alto - 2) {
         pelotaY = alto - 2;
-        velocidadPelotaY *= -1; // Invertir la dirección vertical
+        velocidadPelotaY *= -1;
     }
 
     // Detección de colisión con las raquetas
-    if (pelotaX == raqueta1X + 1 && pelotaY >= raqueta1Y && pelotaY <= raqueta1Y + 2)
-    {
-        velocidadPelotaX *= -1; // Invertir la dirección horizontal al colisionar con la raqueta izquierda
+    if (pelotaX == raqueta1X + 1 && pelotaY >= raqueta1Y && pelotaY <= raqueta1Y + 2) {
+        velocidadPelotaX *= -1;
     }
-    if (pelotaX == raqueta2X - 1 && pelotaY >= raqueta2Y && pelotaY <= raqueta2Y + 2)
-    {
-        velocidadPelotaX *= -1; // Invertir la dirección horizontal al colisionar con la raqueta derecha
+    if (pelotaX == raqueta2X - 1 && pelotaY >= raqueta2Y && pelotaY <= raqueta2Y + 2) {
+        velocidadPelotaX *= -1;
     }
 
     // Detección de colisión con los bordes laterales (marcar punto)
-    if (pelotaX <= 1)
-    {
-        pthread_mutex_lock(&mtxScore); // Bloquear el mutex del marcador
-        scorePlayer2++;                // Jugador 2 marca un punto
-        pthread_mutex_unlock(&mtxScore); // Desbloquear el mutex del marcador
+    if (pelotaX <= 1) {
+        pthread_mutex_lock(&mtxScore);
+        scorePlayer2++;
+        pthread_mutex_unlock(&mtxScore);
         resetPelota();
-    }
-    else if (pelotaX >= ancho - 2)
-    {
-        pthread_mutex_lock(&mtxScore); // Bloquear el mutex del marcador
-        scorePlayer1++;                // Jugador 1 marca un punto
-        pthread_mutex_unlock(&mtxScore); // Desbloquear el mutex del marcador
+    } else if (pelotaX >= ancho - 2) {
+        pthread_mutex_lock(&mtxScore);
+        scorePlayer1++;
+        pthread_mutex_unlock(&mtxScore);
         resetPelota();
     }
 
     pthread_mutex_unlock(&mtx); // Desbloquear el mutex de la pelota
 }
 
+void imprimirTablero() {
+    cout << "Jugador 1: " << scorePlayer1 << " | Jugador 2: " << scorePlayer2 << endl;
 
+    for (int i = 0; i < alto; i++) {
+        for (int j = 0; j < ancho; j++) {
+            if (i == 0 || i == alto - 1) {
+                cout << "_"; // Bordes superior e inferior
+            } else if (j == 0 || j == ancho - 1) {
+                cout << "|"; // Bordes izquierdo y derecho
+            } else if (i == pelotaY && j == pelotaX) {
+                cout << "O"; // Pelota
+            } else if (tablero[i][j] == 2) {
+                cout << u8"\u2588"; // Raqueta izquierda
+            } else if (tablero[i][j] == 3) {
+                cout << u8"\u2588"; // Raqueta derecha
+            } else {
+                cout << " "; // Espacio vacío
+            }
+        }
+        cout << endl;
+    }
+}
 
-void *hiloPelota(void *arg)
-{
-    while (!salir) // Revisar la variable salir para salir del juego
-    {
+// Funciones para hilos de ejecución
+// ---------------------------
+void *hiloPelota(void *arg) {
+    while (!salir) {
         actualizarPelota();
         imprimirTablero();
         dormir(100);       // Pausa de 100 milisegundos
         limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
-
-        // Finalizar el juego si alguien alcanza 10 puntos o se presiona 'x'
-        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir)
-        {
+        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir) {
             break;
         }
     }
     return nullptr;
 }
 
-void moverRaquetaIA(int raquetaID)
-{
-    if (raquetaID == 1)
-    {
-        pthread_mutex_lock(&mtxRaqueta1);
-        for (int i = 0; i < 3; ++i)
-        {
-            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
-            {
-                tablero[raqueta1Y + i][raqueta1X] = 0;
-            }
-        }
-
-        int randomFactor = rand() % 10; // Generar un número aleatorio entre 0 y 9
-        if (randomFactor < 8)  // 80% de chance de seguir la pelota
-        {
-            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4) // Evitar pasar el borde inferior
-            {
-                raqueta1Y++;
-            }
-            else if (raqueta1Y > pelotaY && raqueta1Y > 1) // Evitar pasar el borde superior
-            {
-                raqueta1Y--;
-            }
-        }
-        else  // 20% de chance de moverse aleatoriamente
-        {
-            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4) // Mover hacia abajo, evitando el borde inferior
-            {
-                raqueta1Y++;
-            }
-            else if (raqueta1Y > 1) // Mover hacia arriba, evitando el borde superior
-            {
-                raqueta1Y--;
-            }
-        }
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
-            {
-                tablero[raqueta1Y + i][raqueta1X] = 2; // Raqueta izquierda
-            }
-        }
-        pthread_mutex_unlock(&mtxRaqueta1);
-    }
-    else if (raquetaID == 2)
-    {
-        pthread_mutex_lock(&mtxRaqueta2);
-        for (int i = 0; i < 3; ++i)
-        {
-            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
-            {
-                tablero[raqueta2Y + i][raqueta2X] = 0;
-            }
-        }
-
-        int randomFactor = rand() % 10; // Generar un número aleatorio entre 0 y 9
-        if (randomFactor < 8)  // 80% de chance de seguir la pelota
-        {
-            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4) // Evitar pasar el borde inferior
-            {
-                raqueta2Y++;
-            }
-            else if (raqueta2Y > pelotaY && raqueta2Y > 1) // Evitar pasar el borde superior
-            {
-                raqueta2Y--;
-            }
-        }
-        else  // 20% de chance de moverse aleatoriamente
-        {
-            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4) // Mover hacia abajo, evitando el borde inferior
-            {
-                raqueta2Y++;
-            }
-            else if (raqueta2Y > 1) // Mover hacia arriba, evitando el borde superior
-            {
-                raqueta2Y--;
-            }
-        }
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
-            {
-                tablero[raqueta2Y + i][raqueta2X] = 3; // Raqueta derecha
-            }
-        }
-        pthread_mutex_unlock(&mtxRaqueta2);
-    }
-}
-
-
-void *hiloJugadorComputadora(void *arg)
-{
-    int raquetaID = *(int *)arg;
-    while (!salir) // Revisar la variable salir para salir del juego
-    {
-        moverRaquetaIA(raquetaID);
-        dormir(100);
-        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir)
-        {
-            break;
-        }
-    }
-    return nullptr;
-}
-
-#include <termios.h>
-#include <unistd.h> // Para usar STDIN_FILENO
-
-char leerTecla()
-{
-    struct termios oldt, newt;
-    char ch;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    ch = getchar();
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-
-
-    // Si la tecla 'x' es presionada, se debe salir al menú
-    if (ch == 'x')
-    {
-        salir = true; // Cambiar el estado de la variable global
-    }
-
-    return ch;
-}
-
-void *detectarTeclaX(void *)
-{
-    while (!salir)
-    {
+void *detectarTeclaX(void *) {
+    while (!salir) {
         char tecla = leerTecla();
-        if (tecla == 'x')
-        {
+        if (tecla == 'x') {
             salir = true;
         }
     }
     return nullptr;
 }
 
-
-void moverRaquetaJugador(char tecla)
-{
+// Funciones para mover las raquetas
+// ---------------------------
+void moverRaquetaJugador(char tecla) {
     pthread_mutex_lock(&mtx);
-    // Limpiar la posicion anterior
-    for (int i = 0; i < 3; i++)
-    {
-        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
-        {
+    for (int i = 0; i < 3; i++) {
+        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
             tablero[raqueta1Y + i][raqueta1X] = 0;
         }
     }
 
-    if (tecla == 'w' && raqueta1Y > 1) // Evitar pasar el borde superior
-    {
+    if (tecla == 'w' && raqueta1Y > 1) {
         raqueta1Y--;
-    }
-    else if (tecla == 's' && raqueta1Y < alto - 4) // Evitar pasar el borde inferior
-    {
+    } else if (tecla == 's' && raqueta1Y < alto - 4) {
         raqueta1Y++;
     }
 
-    // Dibujar la nueva posición
-    for (int i = 0; i < 3; i++)
-    {
-        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
-        {
+    for (int i = 0; i < 3; i++) {
+        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
             tablero[raqueta1Y + i][raqueta1X] = 2;
         }
     }
     pthread_mutex_unlock(&mtx);
 }
 
-
-void *hiloJugador(void *)
-{
-    while (!salir) // Revisar la variable salir para salir del juego
-    {
+void *hiloJugador(void *) {
+    while (!salir) {
         char tecla = leerTecla();
         moverRaquetaJugador(tecla);
-        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir)
-        {
+        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir) {
             break;
         }
     }
     return nullptr;
 }
 
+void moverRaquetaIA(int raquetaID) {
+    if (raquetaID == 1) {
+        pthread_mutex_lock(&mtxRaqueta1);
+        for (int i = 0; i < 3; ++i) {
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
+                tablero[raqueta1Y + i][raqueta1X] = 0;
+            }
+        }
 
-void iniciarComputadoraVSComputadora()
-{
-    srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
+        int randomFactor = rand() % 10;
+        if (randomFactor < 8) {
+            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4) {
+                raqueta1Y++;
+            } else if (raqueta1Y > pelotaY && raqueta1Y > 1) {
+                raqueta1Y--;
+            }
+        } else {
+            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4) {
+                raqueta1Y++;
+            } else if (raqueta1Y > 1) {
+                raqueta1Y--;
+            }
+        }
+
+        for (int i = 0; i < 3; i++) {
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
+                tablero[raqueta1Y + i][raqueta1X] = 2;
+            }
+        }
+        pthread_mutex_unlock(&mtxRaqueta1);
+    } else if (raquetaID == 2) {
+        pthread_mutex_lock(&mtxRaqueta2);
+        for (int i = 0; i < 3; ++i) {
+            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto) {
+                tablero[raqueta2Y + i][raqueta2X] = 0;
+            }
+        }
+
+        int randomFactor = rand() % 10;
+        if (randomFactor < 8) {
+            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4) {
+                raqueta2Y++;
+            } else if (raqueta2Y > pelotaY && raqueta2Y > 1) {
+                raqueta2Y--;
+            }
+        } else {
+            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4) {
+                raqueta2Y++;
+            } else if (raqueta2Y > 1) {
+                raqueta2Y--;
+            }
+        }
+
+        for (int i = 0; i < 3; i++) {
+            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto) {
+                tablero[raqueta2Y + i][raqueta2X] = 3;
+            }
+        }
+        pthread_mutex_unlock(&mtxRaqueta2);
+    }
+}
+
+void *hiloJugadorComputadora(void *arg) {
+    int raquetaID = *(int *)arg;
+    while (!salir) {
+        moverRaquetaIA(raquetaID);
+        dormir(100);
+        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir) {
+            break;
+        }
+    }
+    return nullptr;
+}
+
+// Funciones para iniciar los modos de juego
+// ---------------------------
+void iniciarComputadoraVSComputadora() {
+    srand(static_cast<unsigned int>(time(0)));
     iniciarTablero();
-    salir = false; // Restablecer la variable salir antes de iniciar el juego
-    cout << "Iniciando Computadora vs Computadora..." << endl;
-    pthread_mutex_init(&mtxRaqueta1, NULL); // Inicializar el mutex de la primera raqueta
-    pthread_mutex_init(&mtxRaqueta2, NULL); // Inicializar el mutex de la segunda raqueta
+    salir = false;
 
-    pthread_t th1, th2, thPelota, thTeclaX; // Agregar hilo para detectar la tecla 'x'
-    // Identificador para poder utilizar correctamente los mtx en moverRaquetaIA
+    pthread_mutex_init(&mtxRaqueta1, NULL);
+    pthread_mutex_init(&mtxRaqueta2, NULL);
+
+    pthread_t th1, th2, thPelota, thTeclaX;
     int raqueta1ID = 1;
     int raqueta2ID = 2;
 
     pthread_create(&th1, NULL, hiloJugadorComputadora, &raqueta1ID);
     pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID);
     pthread_create(&thPelota, NULL, hiloPelota, NULL);
-    pthread_create(&thTeclaX, NULL, detectarTeclaX, NULL); // Hilo para capturar la tecla 'x'
+    pthread_create(&thTeclaX, NULL, detectarTeclaX, NULL);
 
     pthread_join(th1, NULL);
     pthread_join(th2, NULL);
     pthread_join(thPelota, NULL);
-    pthread_join(thTeclaX, NULL); // Esperar que termine el hilo de la tecla 'x'
+    pthread_join(thTeclaX, NULL);
 
-    pthread_mutex_destroy(&mtxRaqueta1); // Destruir el mutex de raqueta 1
-    pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex de raqueta 2
+    pthread_mutex_destroy(&mtxRaqueta1);
+    pthread_mutex_destroy(&mtxRaqueta2);
 
     cout << "Juego terminado." << endl;
 }
 
-void iniciarJugadorVSComputadora()
-{
-    srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
+void iniciarJugadorVSComputadora() {
+    srand(static_cast<unsigned int>(time(0)));
     iniciarTablero();
-    salir = false; // Restablecer la variable salir antes de iniciar el juego
-    cout << "Iniciando Jugador vs Computadora..." << endl;
-    pthread_mutex_init(&mtxRaqueta2, NULL); // Inicializar el mutex
+    salir = false;
+
+    pthread_mutex_init(&mtxRaqueta2, NULL);
 
     pthread_t th1, thPelota;
-    pthread_create(&th1, NULL, hiloJugador, NULL);     // Jugador 1 controlado por el usuario
-    pthread_create(&thPelota, NULL, hiloPelota, NULL); // Hilo de la pelota
+    pthread_create(&th1, NULL, hiloJugador, NULL);
+    pthread_create(&thPelota, NULL, hiloPelota, NULL);
 
     pthread_t th2;
     int raqueta2ID = 2;
-    pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID); // Jugador 2 controlado por la IA
+    pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID);
 
     pthread_join(th1, NULL);
     pthread_join(th2, NULL);
     pthread_join(thPelota, NULL);
 
-    pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex
+    pthread_mutex_destroy(&mtxRaqueta2);
 
     cout << "Juego terminado." << endl;
 }
