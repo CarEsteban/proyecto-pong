@@ -29,6 +29,9 @@ int velocidadPelotaY = 1; // Velocidad vertical de la pelota
 int scorePlayer1 = 0; // Puntuación del jugador 1 (raqueta izquierda)
 int scorePlayer2 = 0; // Puntuación del jugador 2 (raqueta derecha)
 
+bool salir = false; // Variable para controlar si se debe salir del juego
+
+
 pthread_mutex_t mtx;                      // Mutex para la pelota
 pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas.
 pthread_mutex_t mtxScore;                 // Mutex para el marcador
@@ -180,17 +183,19 @@ void actualizarPelota()
     pthread_mutex_unlock(&mtx); // Desbloquear el mutex de la pelota
 }
 
+
+
 void *hiloPelota(void *arg)
 {
-    while (true)
+    while (!salir) // Revisar la variable salir para salir del juego
     {
         actualizarPelota();
         imprimirTablero();
         dormir(100);       // Pausa de 100 milisegundos
         limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
 
-        // Finalizar el juego si alguien alcanza 10 puntos
-        if (scorePlayer1 == 10 || scorePlayer2 == 10)
+        // Finalizar el juego si alguien alcanza 10 puntos o se presiona 'x'
+        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir)
         {
             break;
         }
@@ -294,11 +299,11 @@ void moverRaquetaIA(int raquetaID)
 void *hiloJugadorComputadora(void *arg)
 {
     int raquetaID = *(int *)arg;
-    while (true)
+    while (!salir) // Revisar la variable salir para salir del juego
     {
         moverRaquetaIA(raquetaID);
         dormir(100);
-        if (scorePlayer1 == 10 || scorePlayer2 == 10)
+        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir)
         {
             break;
         }
@@ -319,8 +324,30 @@ char leerTecla()
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
     ch = getchar();
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+
+    // Si la tecla 'x' es presionada, se debe salir al menú
+    if (ch == 'x')
+    {
+        salir = true; // Cambiar el estado de la variable global
+    }
+
     return ch;
 }
+
+void *detectarTeclaX(void *)
+{
+    while (!salir)
+    {
+        char tecla = leerTecla();
+        if (tecla == 'x')
+        {
+            salir = true;
+        }
+    }
+    return nullptr;
+}
+
 
 void moverRaquetaJugador(char tecla)
 {
@@ -357,11 +384,11 @@ void moverRaquetaJugador(char tecla)
 
 void *hiloJugador(void *)
 {
-    while (true)
+    while (!salir) // Revisar la variable salir para salir del juego
     {
         char tecla = leerTecla();
         moverRaquetaJugador(tecla);
-        if (scorePlayer1 == 10 || scorePlayer2 == 10)
+        if (scorePlayer1 == 10 || scorePlayer2 == 10 || salir)
         {
             break;
         }
@@ -369,26 +396,30 @@ void *hiloJugador(void *)
     return nullptr;
 }
 
+
 void iniciarComputadoraVSComputadora()
 {
     srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
     iniciarTablero();
+    salir = false; // Restablecer la variable salir antes de iniciar el juego
     cout << "Iniciando Computadora vs Computadora..." << endl;
     pthread_mutex_init(&mtxRaqueta1, NULL); // Inicializar el mutex de la primera raqueta
     pthread_mutex_init(&mtxRaqueta2, NULL); // Inicializar el mutex de la segunda raqueta
 
-    pthread_t th1, th2, thPelota;
-    // Indentificador para poder utilizar correctamente los mtx en moverRaquetaIA
+    pthread_t th1, th2, thPelota, thTeclaX; // Agregar hilo para detectar la tecla 'x'
+    // Identificador para poder utilizar correctamente los mtx en moverRaquetaIA
     int raqueta1ID = 1;
     int raqueta2ID = 2;
 
     pthread_create(&th1, NULL, hiloJugadorComputadora, &raqueta1ID);
     pthread_create(&th2, NULL, hiloJugadorComputadora, &raqueta2ID);
     pthread_create(&thPelota, NULL, hiloPelota, NULL);
+    pthread_create(&thTeclaX, NULL, detectarTeclaX, NULL); // Hilo para capturar la tecla 'x'
 
     pthread_join(th1, NULL);
     pthread_join(th2, NULL);
     pthread_join(thPelota, NULL);
+    pthread_join(thTeclaX, NULL); // Esperar que termine el hilo de la tecla 'x'
 
     pthread_mutex_destroy(&mtxRaqueta1); // Destruir el mutex de raqueta 1
     pthread_mutex_destroy(&mtxRaqueta2); // Destruir el mutex de raqueta 2
@@ -400,6 +431,7 @@ void iniciarJugadorVSComputadora()
 {
     srand(static_cast<unsigned int>(time(0))); // Inicializar el generador de números aleatorios
     iniciarTablero();
+    salir = false; // Restablecer la variable salir antes de iniciar el juego
     cout << "Iniciando Jugador vs Computadora..." << endl;
     pthread_mutex_init(&mtxRaqueta2, NULL); // Inicializar el mutex
 
