@@ -210,14 +210,32 @@ void moverRaquetaIA(int raquetaID)
                 tablero[raqueta1Y + i][raqueta1X] = 0;
             }
         }
-        if (raqueta1Y < pelotaY && raqueta1Y < alto - 4)
+
+        // Introducir movimiento aleatorio
+        int randomFactor = rand() % 10; // Generar un número aleatorio entre 0 y 9
+        if (randomFactor < 8)  // 80% de chance de seguir la pelota
         {
-            raqueta1Y++;
+            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4)
+            {
+                raqueta1Y++;
+            }
+            else if (raqueta1Y > pelotaY && raqueta1Y > 1)
+            {
+                raqueta1Y--;
+            }
         }
-        else if (raqueta1Y > pelotaY && raqueta1Y > 1)
+        else  // 20% de chance de moverse aleatoriamente
         {
-            raqueta1Y--;
+            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4) // Mover hacia abajo
+            {
+                raqueta1Y++;
+            }
+            else if (raqueta1Y > 1) // Mover hacia arriba
+            {
+                raqueta1Y--;
+            }
         }
+
         for (int i = 0; i < 3; i++)
         {
             if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
@@ -237,14 +255,32 @@ void moverRaquetaIA(int raquetaID)
                 tablero[raqueta2Y + i][raqueta2X] = 0;
             }
         }
-        if (raqueta2Y < pelotaY && raqueta2Y < alto - 4)
+
+        // Introducir movimiento aleatorio
+        int randomFactor = rand() % 10; // Generar un número aleatorio entre 0 y 9
+        if (randomFactor < 8)  // 80% de chance de seguir la pelota
         {
-            raqueta2Y++;
+            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4)
+            {
+                raqueta2Y++;
+            }
+            else if (raqueta2Y > pelotaY && raqueta2Y > 1)
+            {
+                raqueta2Y--;
+            }
         }
-        else if (raqueta2Y > pelotaY && raqueta2Y > 1)
+        else  // 20% de chance de moverse aleatoriamente
         {
-            raqueta2Y--;
+            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4) // Mover hacia abajo
+            {
+                raqueta2Y++;
+            }
+            else if (raqueta2Y > 1) // Mover hacia arriba
+            {
+                raqueta2Y--;
+            }
         }
+
         for (int i = 0; i < 3; i++)
         {
             if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
@@ -255,6 +291,7 @@ void moverRaquetaIA(int raquetaID)
         pthread_mutex_unlock(&mtxRaqueta2);
     }
 }
+
 
 void *hiloJugadorComputadora(void *arg)
 {
