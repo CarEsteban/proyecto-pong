@@ -205,32 +205,31 @@ void moverRaquetaIA(int raquetaID)
         pthread_mutex_lock(&mtxRaqueta1);
         for (int i = 0; i < 3; ++i)
         {
-            if (raqueta1Y + 1 >= 0 && raqueta1Y + 1 < alto)
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
             {
                 tablero[raqueta1Y + i][raqueta1X] = 0;
             }
         }
 
-        // Introducir movimiento aleatorio
         int randomFactor = rand() % 10; // Generar un número aleatorio entre 0 y 9
         if (randomFactor < 8)  // 80% de chance de seguir la pelota
         {
-            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4)
+            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4) // Evitar pasar el borde inferior
             {
                 raqueta1Y++;
             }
-            else if (raqueta1Y > pelotaY && raqueta1Y > 1)
+            else if (raqueta1Y > pelotaY && raqueta1Y > 1) // Evitar pasar el borde superior
             {
                 raqueta1Y--;
             }
         }
         else  // 20% de chance de moverse aleatoriamente
         {
-            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4) // Mover hacia abajo
+            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4) // Mover hacia abajo, evitando el borde inferior
             {
                 raqueta1Y++;
             }
-            else if (raqueta1Y > 1) // Mover hacia arriba
+            else if (raqueta1Y > 1) // Mover hacia arriba, evitando el borde superior
             {
                 raqueta1Y--;
             }
@@ -250,32 +249,31 @@ void moverRaquetaIA(int raquetaID)
         pthread_mutex_lock(&mtxRaqueta2);
         for (int i = 0; i < 3; ++i)
         {
-            if (raqueta2Y + 1 >= 0 && raqueta2Y + 1 < alto)
+            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
             {
                 tablero[raqueta2Y + i][raqueta2X] = 0;
             }
         }
 
-        // Introducir movimiento aleatorio
         int randomFactor = rand() % 10; // Generar un número aleatorio entre 0 y 9
         if (randomFactor < 8)  // 80% de chance de seguir la pelota
         {
-            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4)
+            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4) // Evitar pasar el borde inferior
             {
                 raqueta2Y++;
             }
-            else if (raqueta2Y > pelotaY && raqueta2Y > 1)
+            else if (raqueta2Y > pelotaY && raqueta2Y > 1) // Evitar pasar el borde superior
             {
                 raqueta2Y--;
             }
         }
         else  // 20% de chance de moverse aleatoriamente
         {
-            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4) // Mover hacia abajo
+            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4) // Mover hacia abajo, evitando el borde inferior
             {
                 raqueta2Y++;
             }
-            else if (raqueta2Y > 1) // Mover hacia arriba
+            else if (raqueta2Y > 1) // Mover hacia arriba, evitando el borde superior
             {
                 raqueta2Y--;
             }
@@ -336,16 +334,16 @@ void moverRaquetaJugador(char tecla)
         }
     }
 
-    if (tecla == 'w' && raqueta1Y > 1)
+    if (tecla == 'w' && raqueta1Y > 1) // Evitar pasar el borde superior
     {
         raqueta1Y--;
     }
-    else if (tecla == 's' && raqueta1Y < alto - 4)
+    else if (tecla == 's' && raqueta1Y < alto - 4) // Evitar pasar el borde inferior
     {
         raqueta1Y++;
     }
 
-    // dibujar la nueva posicion
+    // Dibujar la nueva posición
     for (int i = 0; i < 3; i++)
     {
         if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
@@ -355,6 +353,7 @@ void moverRaquetaJugador(char tecla)
     }
     pthread_mutex_unlock(&mtx);
 }
+
 
 void *hiloJugador(void *)
 {
@@ -420,4 +419,3 @@ void iniciarJugadorVSComputadora()
 
     cout << "Juego terminado." << endl;
 }
-
