@@ -5,6 +5,16 @@
 #include <unistd.h>  // Librería de sleep
 #include <termios.h> // Librería de termios
 
+// Definiendo colores para tablero
+#define RESETCOLOR "\033[0m"
+#define REDSHINY "\033[91m"
+#define BLUESHINY "\033[94m"
+#define YELLOWSHINY "\033[93m"
+#define WHITESHINY "\033[97m"
+#define PURPLESHINY "\033[95m"
+#define BOLD "\033[1m"
+#define RESETBOLD "\033[22m"
+
 using namespace std;
 
 // Constantes y variables globales
@@ -18,19 +28,19 @@ int raqueta1Y = alto / 2 - 1; // Posición vertical inicial de la raqueta izquie
 int raqueta2X = ancho - 3;    // Posición horizontal de la raqueta derecha
 int raqueta2Y = alto / 2 - 1; // Posición vertical inicial de la raqueta derecha
 
-int pelotaX = ancho / 2;      // Posición horizontal inicial de la pelota
-int pelotaY = alto / 2;       // Posición vertical inicial de la pelota
-int velocidadPelotaX = 1;     // Velocidad horizontal de la pelota
-int velocidadPelotaY = 1;     // Velocidad vertical de la pelota
+int pelotaX = ancho / 2;  // Posición horizontal inicial de la pelota
+int pelotaY = alto / 2;   // Posición vertical inicial de la pelota
+int velocidadPelotaX = 1; // Velocidad horizontal de la pelota
+int velocidadPelotaY = 1; // Velocidad vertical de la pelota
 
-int scorePlayer1 = 0;         // Puntuación del jugador 1 (raqueta izquierda)
-int scorePlayer2 = 0;         // Puntuación del jugador 2 (raqueta derecha)
+int scorePlayer1 = 0; // Puntuación del jugador 1 (raqueta izquierda)
+int scorePlayer2 = 0; // Puntuación del jugador 2 (raqueta derecha)
 
-bool salir = false;           // Variable para controlar si se debe salir del juego
+bool salir = false; // Variable para controlar si se debe salir del juego
 
-const int maxScore = 5;       // Conteo máximo para ganar
+const int maxScore = 5; // Conteo máximo para ganar
 
-int velocidad = 100;          // **Variable global para la velocidad**
+int velocidad = 100; // **Variable global para la velocidad**
 
 pthread_mutex_t mtx;                      // Mutex para la pelota
 pthread_mutex_t mtxRaqueta1, mtxRaqueta2; // Mutex para cada una de las raquetas
@@ -38,11 +48,13 @@ pthread_mutex_t mtxScore;                 // Mutex para el marcador
 
 // Utilidades básicas
 // ---------------------------
-void limpiarPantalla() {
+void limpiarPantalla()
+{
     system("clear"); // Comando para limpiar en Linux/macOS
 }
 
-void dormir(int milisegundos) {
+void dormir(int milisegundos)
+{
     usleep(milisegundos * 1000); // usleep recibe microsegundos
 }
 
@@ -66,10 +78,13 @@ char leerTecla()
     return ch;
 }
 
-void *detectarTeclaX(void *) {
-    while (!salir) {
+void *detectarTeclaX(void *)
+{
+    while (!salir)
+    {
         char tecla = leerTecla();
-        if (tecla == 'x') {
+        if (tecla == 'x')
+        {
             salir = true;
         }
     }
@@ -78,75 +93,92 @@ void *detectarTeclaX(void *) {
 
 // Funciones de manejo del tablero y pelota
 // ---------------------------
-void iniciarTablero() {
+void iniciarTablero()
+{
     // Limpiar el tablero
-    for (int i = 0; i < alto; i++) {
-        for (int j = 0; j < ancho; j++) {
+    for (int i = 0; i < alto; i++)
+    {
+        for (int j = 0; j < ancho; j++)
+        {
             tablero[i][j] = 0;
         }
     }
 
     // Generar los bordes superior, inferior, izquierdo y derecho
-    for (int j = 0; j < ancho; j++) {
+    for (int j = 0; j < ancho; j++)
+    {
         tablero[0][j] = 1;        // Borde superior
         tablero[alto - 1][j] = 1; // Borde inferior
     }
 
-    for (int i = 1; i < alto - 1; i++) {
+    for (int i = 1; i < alto - 1; i++)
+    {
         tablero[i][0] = -1;         // Borde izquierdo
         tablero[i][ancho - 1] = -1; // Borde derecho
     }
 
     // Inicializar las raquetas
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         int y1 = raqueta1Y + i;
         int y2 = raqueta2Y + i;
-        if (y1 >= 0 && y1 < alto) {
+        if (y1 >= 0 && y1 < alto)
+        {
             tablero[y1][raqueta1X] = 2; // Raqueta izquierda
         }
-        if (y2 >= 0 && y2 < alto) {
+        if (y2 >= 0 && y2 < alto)
+        {
             tablero[y2][raqueta2X] = 3; // Raqueta derecha
         }
     }
 }
 
-void resetPelota() {
+void resetPelota()
+{
     pelotaX = ancho / 2;
     pelotaY = alto / 2;
     velocidadPelotaX = (rand() % 2 == 0) ? 1 : -1;
     velocidadPelotaY = (rand() % 2 == 0) ? 1 : -1;
 }
 
-void actualizarPelota() {
+void actualizarPelota()
+{
     pthread_mutex_lock(&mtx); // Bloquear el mutex para la pelota
     pelotaX += velocidadPelotaX;
     pelotaY += velocidadPelotaY;
 
     // Detección de colisión con la pared superior e inferior
-    if (pelotaY <= 1) {
+    if (pelotaY <= 1)
+    {
         pelotaY = 1;
         velocidadPelotaY *= -1;
     }
-    if (pelotaY >= alto - 2) {
+    if (pelotaY >= alto - 2)
+    {
         pelotaY = alto - 2;
         velocidadPelotaY *= -1;
     }
 
     // Detección de colisión con las raquetas
-    if (pelotaX == raqueta1X + 1 && pelotaY >= raqueta1Y && pelotaY <= raqueta1Y + 2) {
+    if (pelotaX == raqueta1X + 1 && pelotaY >= raqueta1Y && pelotaY <= raqueta1Y + 2)
+    {
         velocidadPelotaX *= -1;
     }
-    if (pelotaX == raqueta2X - 1 && pelotaY >= raqueta2Y && pelotaY <= raqueta2Y + 2) {
+    if (pelotaX == raqueta2X - 1 && pelotaY >= raqueta2Y && pelotaY <= raqueta2Y + 2)
+    {
         velocidadPelotaX *= -1;
     }
 
     // Detección de colisión con los bordes laterales (marcar punto)
-    if (pelotaX <= 1) {
+    if (pelotaX <= 1)
+    {
         pthread_mutex_lock(&mtxScore);
         scorePlayer2++;
         pthread_mutex_unlock(&mtxScore);
         resetPelota();
-    } else if (pelotaX >= ancho - 2) {
+    }
+    else if (pelotaX >= ancho - 2)
+    {
         pthread_mutex_lock(&mtxScore);
         scorePlayer1++;
         pthread_mutex_unlock(&mtxScore);
@@ -156,22 +188,36 @@ void actualizarPelota() {
     pthread_mutex_unlock(&mtx); // Desbloquear el mutex de la pelota
 }
 
-void imprimirTablero() {
-    cout << "Jugador 1: " << scorePlayer1 << " | Jugador 2: " << scorePlayer2 << endl;
+void imprimirTablero()
+{
+    cout << BLUESHINY BOLD << "Jugador 1: " << RESETCOLOR RESETBOLD << scorePlayer1 << REDSHINY BOLD << " | Jugador 2: " << scorePlayer2 << RESETCOLOR RESETBOLD << endl;
 
-    for (int i = 0; i < alto; i++) {
-        for (int j = 0; j < ancho; j++) {
-            if (i == 0 || i == alto - 1) {
-                cout << "_"; // Bordes superior e inferior
-            } else if (j == 0 || j == ancho - 1) {
-                cout << "|"; // Bordes izquierdo y derecho
-            } else if (i == pelotaY && j == pelotaX) {
-                cout << "O"; // Pelota
-            } else if (tablero[i][j] == 2) {
-                cout << u8"\u2588"; // Raqueta izquierda
-            } else if (tablero[i][j] == 3) {
-                cout << u8"\u2588"; // Raqueta derecha
-            } else {
+    for (int i = 0; i < alto; i++)
+    {
+        for (int j = 0; j < ancho; j++)
+        {
+            if (i == 0 || i == alto - 1)
+            {
+                cout << WHITESHINY BOLD << "_" << RESETCOLOR RESETBOLD; // Bordes superior e inferior
+            }
+            else if (j == 0 || j == ancho - 1)
+            {
+                cout << WHITESHINY BOLD << "|" << RESETCOLOR RESETBOLD; // Bordes izquierdo y derecho
+            }
+            else if (i == pelotaY && j == pelotaX)
+            {
+                cout << WHITESHINY << "O" << RESETCOLOR; // Pelota
+            }
+            else if (tablero[i][j] == 2)
+            {
+                cout << BLUESHINY << u8"\u2588" << RESETCOLOR; // Raqueta izquierda
+            }
+            else if (tablero[i][j] == 3)
+            {
+                cout << REDSHINY << u8"\u2588" << RESETCOLOR; // Raqueta derecha
+            }
+            else
+            {
                 cout << " "; // Espacio vacío
             }
         }
@@ -181,56 +227,73 @@ void imprimirTablero() {
 
 // Funciones para hilos de ejecución
 // ---------------------------
-void *hiloPelota(void *arg) {
-    while (!salir) {
+void *hiloPelota(void *arg)
+{
+    while (!salir)
+    {
         actualizarPelota();
         imprimirTablero();
-        dormir(velocidad);       // **Usar la velocidad configurada**
+        dormir(velocidad); // **Usar la velocidad configurada**
         limpiarPantalla(); // Limpiar la pantalla para el siguiente frame
-        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
+        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir)
+        {
             salir = true;
             break;
         }
     }
     // Mostrar el ganador
     imprimirTablero(); // Mostrar el tablero final
-    if (scorePlayer1 >= maxScore) {
-        cout << "¡Jugador 1 ha ganado!" << endl;
-    } else if (scorePlayer2 >= maxScore) {
-        cout << "¡Jugador 2 ha ganado!" << endl;
+    if (scorePlayer1 >= maxScore)
+    {
+        cout << BLUESHINY BOLD << "¡Jugador 1 ha ganado!" << RESETBOLD RESETCOLOR << endl;
+    }
+    else if (scorePlayer2 >= maxScore)
+    {
+        cout << REDSHINY BOLD << "¡Jugador 2 ha ganado!" << RESETBOLD RESETCOLOR << endl;
     }
     return nullptr;
 }
 
 // Funciones para mover las raquetas
 // ---------------------------
-void moverRaquetaJugador(char tecla) {
+void moverRaquetaJugador(char tecla)
+{
     pthread_mutex_lock(&mtx);
-    for (int i = 0; i < 3; i++) {
-        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
+    for (int i = 0; i < 3; i++)
+    {
+        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
+        {
             tablero[raqueta1Y + i][raqueta1X] = 0;
         }
     }
 
-    if (tecla == 'w' && raqueta1Y > 1) {
+    if (tecla == 'w' && raqueta1Y > 1)
+    {
         raqueta1Y--;
-    } else if (tecla == 's' && raqueta1Y < alto - 4) {
+    }
+    else if (tecla == 's' && raqueta1Y < alto - 4)
+    {
         raqueta1Y++;
     }
 
-    for (int i = 0; i < 3; i++) {
-        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
+    for (int i = 0; i < 3; i++)
+    {
+        if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
+        {
             tablero[raqueta1Y + i][raqueta1X] = 2;
         }
     }
     pthread_mutex_unlock(&mtx);
 }
 
-void *hiloJugador(void *) {
-    while (!salir) {
+void *hiloJugador(void *)
+{
+    while (!salir)
+    {
         char tecla = leerTecla();
         moverRaquetaJugador(tecla);
-        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
+        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir)
+        {
             salir = true;
             break;
         }
@@ -238,61 +301,91 @@ void *hiloJugador(void *) {
     return nullptr;
 }
 
-void moverRaquetaIA(int raquetaID) {
-    if (raquetaID == 1) {
+void moverRaquetaIA(int raquetaID)
+{
+    if (raquetaID == 1)
+    {
         pthread_mutex_lock(&mtxRaqueta1);
-        for (int i = 0; i < 3; ++i) {
-            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
+        for (int i = 0; i < 3; ++i)
+        {
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
+            {
                 tablero[raqueta1Y + i][raqueta1X] = 0;
             }
         }
 
         int randomFactor = rand() % 10;
-        if (randomFactor < 8) {
-            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4) {
+        if (randomFactor < 8)
+        {
+            if (raqueta1Y < pelotaY && raqueta1Y < alto - 4)
+            {
                 raqueta1Y++;
-            } else if (raqueta1Y > pelotaY && raqueta1Y > 1) {
+            }
+            else if (raqueta1Y > pelotaY && raqueta1Y > 1)
+            {
                 raqueta1Y--;
             }
-        } else {
-            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4) {
+        }
+        else
+        {
+            if (randomFactor % 2 == 0 && raqueta1Y < alto - 4)
+            {
                 raqueta1Y++;
-            } else if (raqueta1Y > 1) {
+            }
+            else if (raqueta1Y > 1)
+            {
                 raqueta1Y--;
             }
         }
 
-        for (int i = 0; i < 3; i++) {
-            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto) {
+        for (int i = 0; i < 3; i++)
+        {
+            if (raqueta1Y + i >= 0 && raqueta1Y + i < alto)
+            {
                 tablero[raqueta1Y + i][raqueta1X] = 2;
             }
         }
         pthread_mutex_unlock(&mtxRaqueta1);
-    } else if (raquetaID == 2) {
+    }
+    else if (raquetaID == 2)
+    {
         pthread_mutex_lock(&mtxRaqueta2);
-        for (int i = 0; i < 3; ++i) {
-            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto) {
+        for (int i = 0; i < 3; ++i)
+        {
+            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
+            {
                 tablero[raqueta2Y + i][raqueta2X] = 0;
             }
         }
 
         int randomFactor = rand() % 10;
-        if (randomFactor < 8) {
-            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4) {
+        if (randomFactor < 8)
+        {
+            if (raqueta2Y < pelotaY && raqueta2Y < alto - 4)
+            {
                 raqueta2Y++;
-            } else if (raqueta2Y > pelotaY && raqueta2Y > 1) {
+            }
+            else if (raqueta2Y > pelotaY && raqueta2Y > 1)
+            {
                 raqueta2Y--;
             }
-        } else {
-            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4) {
+        }
+        else
+        {
+            if (randomFactor % 2 == 0 && raqueta2Y < alto - 4)
+            {
                 raqueta2Y++;
-            } else if (raqueta2Y > 1) {
+            }
+            else if (raqueta2Y > 1)
+            {
                 raqueta2Y--;
             }
         }
 
-        for (int i = 0; i < 3; i++) {
-            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto) {
+        for (int i = 0; i < 3; i++)
+        {
+            if (raqueta2Y + i >= 0 && raqueta2Y + i < alto)
+            {
                 tablero[raqueta2Y + i][raqueta2X] = 3;
             }
         }
@@ -300,12 +393,15 @@ void moverRaquetaIA(int raquetaID) {
     }
 }
 
-void *hiloJugadorComputadora(void *arg) {
+void *hiloJugadorComputadora(void *arg)
+{
     int raquetaID = *(int *)arg;
-    while (!salir) {
+    while (!salir)
+    {
         moverRaquetaIA(raquetaID);
         dormir(velocidad); // **Usar la velocidad configurada**
-        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir) {
+        if (scorePlayer1 >= maxScore || scorePlayer2 >= maxScore || salir)
+        {
             salir = true;
             break;
         }
@@ -315,7 +411,8 @@ void *hiloJugadorComputadora(void *arg) {
 
 // Funciones para iniciar los modos de juego
 // ---------------------------
-void iniciarComputadoraVSComputadora() {
+void iniciarComputadoraVSComputadora()
+{
     srand(static_cast<unsigned int>(time(0)));
     iniciarTablero();
     salir = false;
@@ -342,10 +439,11 @@ void iniciarComputadoraVSComputadora() {
     pthread_mutex_destroy(&mtxRaqueta1);
     pthread_mutex_destroy(&mtxRaqueta2);
 
-    cout << "Juego terminado." << endl;
+    cout << BOLD << "Juego terminado." << RESETBOLD << endl;
 }
 
-void iniciarJugadorVSComputadora() {
+void iniciarJugadorVSComputadora()
+{
     srand(static_cast<unsigned int>(time(0)));
     iniciarTablero();
     salir = false;
@@ -370,5 +468,5 @@ void iniciarJugadorVSComputadora() {
 
     pthread_mutex_destroy(&mtxRaqueta2);
 
-    cout << "Juego terminado." << endl;
+    cout << BOLD << "Juego terminado." << RESETBOLD << endl;
 }
