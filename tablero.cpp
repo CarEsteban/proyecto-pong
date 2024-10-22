@@ -4,12 +4,7 @@
 #include <pthread.h> // Libreria de pthread
 #include <unistd.h>  // Libreria de sleep
 #include <termios.h> // Libreria de termios
-
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <unistd.h>
-#endif
 
 using namespace std;
 
@@ -40,20 +35,12 @@ pthread_mutex_t mtxScore;                 // Mutex para el marcador
 
 void limpiarPantalla()
 {
-#ifdef _WIN32
-    system("cls"); // Comando para limpiar en Windows
-#else
     system("clear"); // Comando para limpiar en Linux/macOS
-#endif
 }
 
 void dormir(int milisegundos)
 {
-#ifdef _WIN32
-    Sleep(milisegundos);
-#else
     usleep(milisegundos * 1000); // usleep recibe microsegundos
-#endif
 }
 
 void imprimirTablero()
@@ -284,15 +271,6 @@ void *hiloJugadorComputadora(void *arg)
     return nullptr;
 }
 
-#ifdef _WIN32
-#include <conio.h> // Windows-specific header for getch()
-
-char leerTecla()
-{
-    return getch(); // Función para capturar teclas en Windows
-}
-
-#else
 #include <termios.h>
 #include <unistd.h> // Para usar STDIN_FILENO
 
@@ -308,7 +286,6 @@ char leerTecla()
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return ch;
 }
-#endif
 
 void moverRaquetaJugador(char tecla)
 {
