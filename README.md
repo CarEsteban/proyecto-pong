@@ -1,6 +1,6 @@
 # PONG GAME 🏓
 
-## Como jugar.
+## Como jugar
 Luego de seleccionar la opción de Jugador vs Computadora, usted tendra la opción de poder mover la raqueta de arriba hacia abajo. 
 Utilizara los botones del teclado:
 
